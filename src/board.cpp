@@ -33,6 +33,12 @@ Board::Board(int w, int h) : boardWidth(w), boardHeight(h) {
         row.resize(boardWidth);
     }
 }
+
+BoardInfo Board::GetBoardInfo() {
+    BoardInfo temp = std::make_pair(boardWidth, boardHeight);
+    return temp;
+}
+
 void Board::DrawBoard(SDL_Renderer* renderer) {
     SDL_FRect tempRect;
     const SDL_Color WHITE = {255, 255, 255, 255};
@@ -51,6 +57,7 @@ void Board::DrawBoard(SDL_Renderer* renderer) {
             DrawRect(renderer, posX, posY, BLOCK_WIDTH, BLOCK_HEIGHT, color);
         }
     }
+    //Draw Actual Pieces placed down
     for (size_t row = 0; row < grid.size(); ++row) { //Actual pieces
         for (size_t col = 0; col < grid[row].size(); ++col) {
             const Block& block = grid[row][col];
