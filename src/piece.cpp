@@ -6,24 +6,16 @@
 
 Piece::Piece(PieceType block) : type(block) { 
     piece.reserve(4); //What in the shit is ts hardcoded shitty code
-    const SDL_Color blue = {20, 20, 180, SDL_ALPHA_OPAQUE};
-    const SDL_Color red = {255, 0, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color green = {0, 255, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color orange = {255, 165, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color cyan = {20, 20, 255, SDL_ALPHA_OPAQUE};
-    const SDL_Color pink = {255, 16, 240, SDL_ALPHA_OPAQUE};
-    const SDL_Color yellow = {255, 255, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color gray = {150, 150, 150, SDL_ALPHA_OPAQUE};
 
     const std::unordered_map<PieceType, TetriminoData> pieceMap = {
-        { PieceType::I, {cyan, {{-1, 0}, {0, 0}, {1, 0}, {2, 0}}} },
-        { PieceType::Z, {red,   {{-1, 1}, {0, 0}, {0, 1}, {1, 0}}} },
-        { PieceType::S, {green,   {{-1, 0}, {0, 0}, {0, 1}, {1, 1}}} },
-        { PieceType::L, {orange, {{-1, 0}, {0, 0}, {1, 0}, {1, 1}}} },
-        { PieceType::J, {blue,   {{-1, 1}, {0, 0}, {-1, 0}, {1, 0}}} },
-        { PieceType::T, {pink,{{-1, 0}, {0, 0}, {1, 0}, {0, 1}}} },
-        { PieceType::O, {yellow, {{0, 0}, {1, 0}, {0, 1}, {1, 1}}} },
-        { PieceType::SINGLE, {gray, {{0, 0}}} }
+        { PieceType::I, {Colors::cyan, {{-1, 0}, {0, 0}, {1, 0}, {2, 0}}} },
+        { PieceType::Z, {Colors::red,   {{-1, 1}, {0, 0}, {0, 1}, {1, 0}}} },
+        { PieceType::S, {Colors::green,   {{-1, 0}, {0, 0}, {0, 1}, {1, 1}}} },
+        { PieceType::L, {Colors::orange, {{-1, 0}, {0, 0}, {1, 0}, {1, 1}}} },
+        { PieceType::J, {Colors::blue,   {{-1, 1}, {0, 0}, {-1, 0}, {1, 0}}} },
+        { PieceType::T, {Colors::pink,{{-1, 0}, {0, 0}, {1, 0}, {0, 1}}} },
+        { PieceType::O, {Colors::yellow, {{0, 0}, {1, 0}, {0, 1}, {1, 1}}} },
+        { PieceType::SINGLE, {Colors::gray, {{0, 0}}} }
     };
         
     const int centerX = 5;
@@ -94,8 +86,7 @@ void Piece::Move(bool isLeft, Board* board) {
     return;
 }
 
-void Piece::Rotate(bool isCW, Board* board) {
-    //rotationState = isCW ? clockwiseRotate(rotationState) : counterClockwiseRotate(rotationState);
+void Piece::Rotate(bool isCW, Board* board) { //delete this and recode in the future or recode
     
     if (type == PieceType::SINGLE || type == PieceType::O) {
         return; // No rotation for single or O piece
@@ -116,7 +107,7 @@ void Piece::Rotate(bool isCW, Board* board) {
             int offsetX = block.x - piece[centerBlockIndex].x, offsetY = block.y - piece[centerBlockIndex].y;
             temp[center+offsetY][center+offsetX] = block;
         }
-        rotateMatrix(temp, isCW); //Rotate Matrix cuz i suck at math
+        rotateMatrix(temp, !isCW); //Rotate Matrix cuz i suck at math
         //Write checking if it collide code here
         for (size_t row = 0; row < temp.size(); row++) {
             
@@ -134,7 +125,7 @@ void Piece::Rotate(bool isCW, Board* board) {
             }
         }
         if (doSRS) {
-            bool res = testSRS(isCW, board, temp);
+            bool res = TestSRS(isCW, board, temp);
             if (!res) return;
         }
         setRotationState(&rotationState, isCW);
@@ -163,7 +154,7 @@ inline void rotateMatrix(Grid& grid, bool isCCW) {
             std::swap(grid[i][j], grid[j][i]);
         }
     }
-    if (!isCCW) {
+    if (isCCW) {
         for (std::vector<Block> &row : grid) {
             std::reverse(row.begin(), row.end());
         }
@@ -193,7 +184,7 @@ inline void Piece::setRotationState(Rotation *r, bool isCW) {
     return;
 }
 
-bool Piece::testSRS(bool isCW, Board* board, Grid& pieceMatrix) {
+bool Piece::TestSRS(bool isCW, Board* board, Grid& pieceMatrix) {
     constexpr int MAX_TESTS = 4;
     const Offset clockwiseTests[4][4] = {
         {{-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},   //Anticlockwise->Spawn      / 3->0

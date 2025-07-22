@@ -33,6 +33,17 @@ using Offset = std::pair<int, int>;
 //For rotating a 3x3 matrix
 inline void rotateMatrix(Grid& grid, bool isCCW);
 
+namespace Colors {
+    const SDL_Color blue = {20, 20, 180, SDL_ALPHA_OPAQUE};
+    const SDL_Color red = {255, 0, 0, SDL_ALPHA_OPAQUE};
+    const SDL_Color green = {0, 255, 0, SDL_ALPHA_OPAQUE};
+    const SDL_Color orange = {255, 165, 0, SDL_ALPHA_OPAQUE};
+    const SDL_Color cyan = {20, 20, 255, SDL_ALPHA_OPAQUE};
+    const SDL_Color pink = {255, 16, 240, SDL_ALPHA_OPAQUE};
+    const SDL_Color yellow = {255, 255, 0, SDL_ALPHA_OPAQUE};
+    const SDL_Color gray = {150, 150, 150, SDL_ALPHA_OPAQUE};
+}
+
 struct TetriminoData {
     SDL_Color color;
     std::vector<Offset> offsets;
@@ -58,5 +69,6 @@ private:
     Rotation rotationState = SPAWN;
 
     inline void setRotationState(Rotation* r, bool CW);
-    bool testSRS(bool isCW, Board* board, Grid& pieceMatrix);
+    inline bool CheckCollisions(Grid pieceMatrix, Grid& pieceSurroundings, BoardInfo boardiInfo);
+    bool TestSRS(bool isCW, Board* board, Grid& pieceMatrix);
 };
