@@ -28,26 +28,33 @@ using Grid = std::vector<std::vector<Block>>;
 using Tetrimino = std::vector<Block>;
 using Offset = std::pair<int, int>;
 
-//For Setting RotationState enums
-//inline void setRotationState(Rotation* r, bool CW);
 //For rotating a 3x3 matrix
 inline void rotateMatrix(Grid& grid, bool isCCW);
-
-namespace Colors {
-    const SDL_Color blue = {20, 20, 180, SDL_ALPHA_OPAQUE};
-    const SDL_Color red = {255, 0, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color green = {0, 255, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color orange = {255, 165, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color cyan = {20, 20, 255, SDL_ALPHA_OPAQUE};
-    const SDL_Color pink = {255, 16, 240, SDL_ALPHA_OPAQUE};
-    const SDL_Color yellow = {255, 255, 0, SDL_ALPHA_OPAQUE};
-    const SDL_Color gray = {150, 150, 150, SDL_ALPHA_OPAQUE};
-}
 
 struct TetriminoData {
     SDL_Color color;
     std::vector<Offset> offsets;
 };
+
+namespace Colors {
+    extern const SDL_Color blue;
+    extern const SDL_Color red;
+    extern const SDL_Color green;
+    extern const SDL_Color orange;
+    extern const SDL_Color cyan;
+    extern const SDL_Color pink;
+    extern const SDL_Color yellow;
+    extern const SDL_Color gray;
+}
+
+namespace Offsets {
+
+    extern const std::unordered_map<PieceType, TetriminoData>& getPieceMap();
+    
+    extern const Offset clockwiseTests[4][4];
+
+    extern const Offset anticlockwiseTests[4][4];
+}
 
 // For supporting SRS rotations and such 
 class Piece {
@@ -67,8 +74,9 @@ private:
     enum PieceType type;
     Tetrimino piece;
     Rotation rotationState = SPAWN;
-
-    inline void setRotationState(Rotation* r, bool CW);
-    inline bool CheckCollisions(Grid pieceMatrix, Grid& pieceSurroundings, BoardInfo boardiInfo);
+private:
+    inline Rotation GetNextRotationState(Rotation r, bool CW);
+    inline bool CheckCollisions(const Grid &pieceMatrix, const Grid &pieceSurroundings, const BoardInfo boardiInfo);
+    inline void OffsetGridBlocks(Grid& pieceMatrix, Offset offset);
     bool TestSRS(bool isCW, Board* board, Grid& pieceMatrix);
 };
