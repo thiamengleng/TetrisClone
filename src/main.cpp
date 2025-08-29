@@ -3,6 +3,7 @@
 
 #include "input.h"
 #include "piece.h"
+#include "randomiser.h"
 
 int main() { //Main thread
     const int windowHeight = 1080, windowWidth = 1920;
@@ -12,8 +13,8 @@ int main() { //Main thread
     SDL_Event event;
 
     Board board(bWidth, bHeight);
-
-    Piece piec(PieceType::Z);
+    Randomiser picker; 
+    Piece piec = picker.Get();
 
     SDL_Init(SDL_INIT_VIDEO);
     SDL_CreateWindowAndRenderer("Tetris Clone", windowWidth, windowHeight, 0, &window, &renderer);
@@ -25,7 +26,7 @@ int main() { //Main thread
         piec.Render(renderer, &board);
         SDL_RenderPresent(renderer);
         
-        SDL_WaitEvent(&event);
+        SDL_PollEvent(&event);
         
         switch (event.type) {
             case SDL_EVENT_QUIT:
@@ -56,6 +57,11 @@ int main() { //Main thread
                 }
                 if (event.key.key == SDLK_S) {
                     piec.Place(&board);
+                    piec = picker.Get();
+                }
+                if (event.key.key == SDLK_SPACE) {
+                    piec.HardDrop(&board);
+                    piec = picker.Get();
                 }
                 break;
 

@@ -46,15 +46,33 @@ namespace Offsets {
     };
 }
 
-Piece::Piece(PieceType block) : type(block) { 
-    piece.reserve(4); //What in the shit is ts hardcoded shitty code
+Piece::Piece() {
+    m_piece.reserve(4);
+    const std::unordered_map<PieceType, TetriminoData> pieceMap = Offsets::getPieceMap();
+    auto it = pieceMap.find(PieceType::T);
+    if (it == pieceMap.end()) {
+        SDL_Log("Invalid piece type!\n");
+        return;
+    }
+
+    const auto& data = it->second;
+    const int centerX = 5;
+    const int centerY = 21;
+    for (const auto& [dx, dy] : data.offsets) {
+        m_piece.emplace_back(centerX + dx, centerY + dy, data.color);
+    }
+    m_piece.shrink_to_fit();
+}
+
+Piece::Piece(PieceType block) : m_type(block) { 
+    m_piece.reserve(4);
         
     const int centerX = 5;
     const int centerY = 21;
 
     const std::unordered_map<PieceType, TetriminoData> pieceMap = Offsets::getPieceMap();
 
-    auto it = pieceMap.find(type);
+    auto it = pieceMap.find(m_type);
     if (it == pieceMap.end()) {
         SDL_Log("Invalid piece type!\n");
         return;
@@ -62,18 +80,18 @@ Piece::Piece(PieceType block) : type(block) {
 
     const auto& data = it->second;
     for (const auto& [dx, dy] : data.offsets) {
-        piece.emplace_back(centerX + dx, centerY + dy, data.color);
+        m_piece.emplace_back(centerX + dx, centerY + dy, data.color);
     }
-    piece.shrink_to_fit();
+    m_piece.shrink_to_fit();
 } 
 
 void Piece::Render(SDL_Renderer* renderer, Board *board) {
-    if (placed) return;
+    if (m_placed) return;
     BoardInfo info = board->GetBoardInfo();
     int boardWidth = info.first;
     int boardHeight = info.second;
     const int boardStartX = 1920/2 - (BLOCK_WIDTH * boardWidth)/2, boardStartY = 1080 - 90 - BLOCK_HEIGHT * boardHeight;
-    for (Block block: piece) {
+    for (Block block: m_piece) {
         SDL_FRect tempRect;
 
         SDL_SetRenderDrawColor(renderer, block.color.r, block.color.g, block.color.b, block.color.a);
@@ -86,36 +104,126 @@ void Piece::Render(SDL_Renderer* renderer, Board *board) {
     
     return;
 }
-
+/**
+ * @brief Does not check for collisions and sets board color to piece colors
+ * 
+ * @param board Pointer to board that will be placed on
+ * @return
+ */
 void Piece::Place(Board* board) {
-    if (placed) return;
-    for (Block& block: piece) {
+    if (m_placed) return;
+    for (Block& block: m_piece) {
         board->SetBlockColor(block.y, block.x, block.color);
     }
-    placed = true;
+
+    //board->ClearLines();
+    m_placed = true;
     return;
 }
-
+/**
+ * @brief Moves current piece down by 1 until it collides with a block or reaches bottom of the board
+ * 
+ * @param board Pointer to board that will be placed on
+ * @return
+ */
 void Piece::SoftDrop(Board* board) {
-    for (Block block: piece) {
+    for (Block block: m_piece) {
         if (block.y <= 0) return; //0 is the lowest point lmao
     }
-    for (Block& block: piece) {
+    Tetrimino tempTetrimino = m_piece;
+    for (Block &block: tempTetrimino) {
         block.y -=1;
+        Grid converted = _singleblock(block);
+        Grid convertedPiece = converted;
+        Grid surroundings = board->GetSurrounding(block);
+
+        if ( CheckCollisions(converted, surroundings, board->GetBoardInfo()) ) {
+            return;
+        }
     }
+    for (Block &block: m_piece) {
+        block.y -= 1;
+    }
+    
     return;
 }
+/**
+ * @brief Moves current piece down until it collides with a block or reaches bottom of the board
+ * 
+ * @param board Pointer to board that will be placed on
+ * @return
+ */
+void Piece::HardDrop(Board* board) {
+    Tetrimino tempTetrimino = m_piece;
+    Grid convertedPiece = ConvertPieceToGrid(tempTetrimino);
+    for (int i = 0; i < 24; i++) {
+        for (Block block: m_piece) {
+            if (block.y <= 0) {
+                Place(board);
+                return;
+            } //0 is the lowest point lmao
+        }
+        bool broke = false;
+        for (Block &block: tempTetrimino) {
+            block.y -=1;
+            Grid converted = _singleblock(block);
+            Grid convertedPiece = converted;
+            Grid surroundings = board->GetSurrounding(block);
+
+            if ( CheckCollisions(converted, surroundings, board->GetBoardInfo()) ) {
+                broke = true;
+                break;
+            }
+        }
+        if (broke) break;
+        for (Block &block: m_piece) {
+            block.y -= 1;
+        }
+
+    }
+    Place(board);
+    return;
+}
+/**
+ * @brief Moves current piece object horizontally
+ * 
+ * @param isLeft To see which direction
+ * @param board Pointer to board that will be placed on
+ * @return
+ */
 void Piece::Move(bool isLeft, Board* board) {
     //Check if collide with anything here 
+    Tetrimino tempPiece = m_piece;
     BoardInfo info = board->GetBoardInfo();
     int width = info.first - 1;
-    for (Block block: piece) {
+    for (Block block: m_piece) {
         if ((block.x == 0 && isLeft) || (block.x >= width && !isLeft)) return; 
     }
     //Move
-    for (Block& block: piece) {
+    for (Block &block: tempPiece) {
+        block.x += isLeft ? -1 : 1;
+        Grid converted = _singleblock(block);
+        Grid convertedPiece = converted;
+        Grid surroundings = board->GetSurrounding(block);
+
+        if ( CheckCollisions(converted, surroundings, board->GetBoardInfo()) ) {
+            return;
+        }
+    }
+    for (Block &block: m_piece) {
         block.x += isLeft ? -1 : 1;
     }
+    // for (Block& block: tempPiece) {
+    //     block.x += isLeft ? -1 : 1;
+    // }
+    // Grid convertedPiece = ConvertPieceToGrid(tempPiece);
+    // Grid surroundings = board->GetSurrounding(tempPiece[m_centerBlockIndex]);
+    // if ( !CheckCollisions(convertedPiece, surroundings, board->GetBoardInfo()) ) {
+    //     for (Block &block: m_piece) {
+    //         block.x += isLeft ? -1 : 1;
+    //     }
+    // } 
+
     return;
 }
  /**
@@ -127,40 +235,32 @@ void Piece::Move(bool isLeft, Board* board) {
  */
 void Piece::Rotate(bool isCW, Board* board) { //delete this and recode in the future or recode
     
-    if (type == PieceType::SINGLE || type == PieceType::O) {
+    if (m_type == PieceType::SINGLE || m_type == PieceType::O) {
         return; // No rotation for single or O piece
-    } else if (type != PieceType::I) { //Check if piece collides with any other piece first in other functions
+    } else if (m_type != PieceType::I) { //Check if piece collides with any other piece first in other functions
         const int center = 1; //Middle of 3x3 matrix row and column
-        Grid temp;
-        Grid surroundings = board->GetSurrounding(piece[centerBlockIndex]);
+        Grid temp = ConvertPieceToGrid(m_piece);
+        Grid surroundings = board->GetSurrounding(m_piece[m_centerBlockIndex]);
         BoardInfo boardInfo = board->GetBoardInfo();
         bool doSRS = false;
 
-        temp.resize(3);
-        for (std::vector<Block> &row : temp) {
-            row.resize(3);
-        }
-        //setting block cords in 3x3 temp matrixx for some reason
-        for (Block block : piece) {
-            int offsetX = block.x - piece[centerBlockIndex].x, offsetY = block.y - piece[centerBlockIndex].y;
-            temp[center+offsetY][center+offsetX] = block;
-        }
         rotateMatrix(temp, !isCW); //Rotate Matrix cuz i suck at math
+        //plan: get blocks of the piece from temp (rotated) and check collisions 
         //Write checking if it collide code here
         doSRS = CheckCollisions(temp, surroundings, board->GetBoardInfo());
         if (doSRS) {
             if(!TestSRS(isCW, board, temp)) return;
         }
-        rotationState = GetNextRotationState(rotationState, isCW);
+        m_rotationState = GetNextRotationState(m_rotationState, isCW);
         int w_index = 0;
         for (size_t row = 0; row < temp.size(); row++) {
             for (size_t col = 0; col < temp[row].size(); col++) {
                 int x = col-center;
                 int y = row-center;
                 if (temp[row][col].color.a == SDL_ALPHA_TRANSPARENT) continue;
-                if (x == 0 && y == 0) centerBlockIndex = w_index;
-                piece[w_index].x = temp[center][center].x + x;
-                piece[w_index].y = temp[center][center].y + y;
+                if (x == 0 && y == 0) m_centerBlockIndex = w_index;
+                m_piece[w_index].x = temp[center][center].x + x;
+                m_piece[w_index].y = temp[center][center].y + y;
                 w_index++;
             }
         }
@@ -169,10 +269,34 @@ void Piece::Rotate(bool isCW, Board* board) { //delete this and recode in the fu
     }
     return;
 }
+
+inline Grid Piece::_singleblock(Block centerB) {
+    constexpr int center = 1;
+    Grid temp;
+    temp.resize(3);
+    for (std::vector<Block> &row : temp) {
+        row.resize(3);
+    }
+    temp[center][center] = centerB;
+    return temp;
+}
+
+inline Grid Piece::ConvertPieceToGrid(const Tetrimino &piece) {
+    constexpr int center = 1;
+    Grid temp;
+    temp.resize(3);
+    for (std::vector<Block> &row : temp) {
+        row.resize(3);
+    }
+        //setting block cords in 3x3 temp matrixx for some reason
+    for (Block block : piece) {
+        int offsetX = block.x - piece[m_centerBlockIndex].x, offsetY = block.y - piece[m_centerBlockIndex].y;
+        temp[2-center+offsetY][center+offsetX] = block;
+    }
+    return temp;
+}
 /**
- * @brief Returns next rotation state in enum depending on direction
- * Since tetris clockwise rotations actually rotate in the opposite direction,
- * the original isCW parameter is changed to isCCW
+ * @brief Rotates a matrix
  * @param grid A reference to the grid to be rotated
  * @param isCCW If the direction to be rotated in is counter clockwise
  * @return
@@ -202,6 +326,28 @@ inline void rotateMatrix(Grid& grid, bool isCCW) {
             if (grid[row][col].color.a == SDL_ALPHA_TRANSPARENT) continue;
             grid[row][col].x = grid[center][center].x+x;
             grid[row][col].y = grid[center][center].y+y;
+        }
+    }
+}
+/**
+ * @brief Rotates a piece without matrix
+ * @param piece Tetrimino to be rotated
+ * @param center Center to be rotated about
+ * @param isCCW If the direction to be rotated in is counter clockwise
+ * @return
+ */
+inline void rotatePiece(Tetrimino& piece, const Block& center, bool isCCW) {
+    if (isCCW) {
+        for (Block& block: piece) {
+            int dx = block.x - center.x, dy = block.y - center.y;
+            block.x = dy + center.x;
+            block.y = -dx + center.y;
+        }
+    } else {
+        for (Block& block: piece) {
+            int dx = block.x - center.x, dy = block.y - center.y;
+            block.x = -dy + center.x;
+            block.y = dx + center.y;
         }
     }
 }
@@ -266,7 +412,7 @@ bool Piece::TestSRS(bool isCW, Board* board, Grid& pieceMatrix) {
 
     for (int test = 0; test < MAX_TESTS; test++) {
         constexpr int center = 1;
-        Rotation nextRotationState = GetNextRotationState(rotationState, isCW);
+        Rotation nextRotationState = GetNextRotationState(m_rotationState, isCW);
         BoardInfo boardInfo = board->GetBoardInfo();
         Grid surroundings, offseted;
         Offset testOffset = isCW ?                                  //putting comments here cuz short hand if statement are confuse

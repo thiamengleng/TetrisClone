@@ -64,29 +64,43 @@ void Board::DrawBoard(SDL_Renderer* renderer) {
             if (block.color.a == SDL_ALPHA_TRANSPARENT) continue;
             int posX = boardStartX + block.x*BLOCK_WIDTH;
             int posY = boardStartY + (boardHeight - 1 - block.y) * BLOCK_HEIGHT;
-            SDL_Log("StartPos: %d, %d", boardStartX, boardStartY);
-            SDL_Log("Position: %d, %d", posX, posY);
-            SDL_Log("Indice: %d, %d", block.x, block.y);
+            // SDL_Log("StartPos: %d, %d", boardStartX, boardStartY);
+            // SDL_Log("Position: %d, %d", posX, posY);
+            // SDL_Log("Indice: %d, %d", block.x, block.y);
             //SDL_Log()
             DrawRectFilled(renderer, posX, posY, BLOCK_WIDTH, BLOCK_HEIGHT, block.color);
         }
     }
 }
-
+//This is suppose to return a 3x3 grid regardless of position, (VERY BUGGY)
 Grid Board::GetSurrounding(Block center) { // For everything except I piece, I piece will be in another func
     Grid surroundingBlocks;
-    size_t rowMin = std::max(0, center.y - 1);
-    size_t rowMax = std::min(static_cast<int>(grid.size()) - 1, center.y + 1);
+    int rowMin = std::max(0, center.y - 1);
     surroundingBlocks.resize(3);
-    for (int row = rowMin; row <= rowMax; ++row) {
-        int colMin = std::max(0, center.x - 1);
-        int colMax = std::min(static_cast<int>(grid[row].size()) - 1, center.x + 1);
-        for (int col = colMin; col <= colMax; ++col) {
-            const Block& block = grid[row][col];
-            surroundingBlocks[row - rowMin].push_back(block);
+    for (std::vector<Block> &row: surroundingBlocks) {
+        row.resize(3);
+    }
+
+    //WTF IS GOING ON BRUH
+    for (int row = rowMin; row <= rowMin + 2; ++row) {
+        for (int col = -1; col < 2; col++) {
+            bool outOfBoard = center.x + col < 0 || center.x + col >= boardWidth;
+            if (outOfBoard) {
+                surroundingBlocks[rowMin+2 - row][col+1] = Block(col+center.x, row, {0, 0, 0, SDL_ALPHA_TRANSPARENT});
+                continue;
+            }
+            const Block& block = grid[row][col+center.x];
+            surroundingBlocks[rowMin+2 - row][col+1] = block;
         }
     }
     return surroundingBlocks;
+}
+// returns block on board that corresponds with center
+Block Board::GetCorrespondingBlock(Block center) {
+    if (center.y < 0 || center.x >= boardWidth || center.x < 0) {
+        return Block(-147, -147, {0, 0, 0, SDL_ALPHA_TRANSPARENT}); //-147 snooker respect
+    }
+    return grid[center.y][center.x];
 }
 
 bool Board::SetBlockColor(int row, int column, SDL_Color color) {

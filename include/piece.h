@@ -56,9 +56,16 @@ namespace Offsets {
     extern const Offset anticlockwiseTests[4][4];
 }
 
+/*
+TODO: 
+rename class variable members as m_variable
+add board as a member
+*/
 // For supporting SRS rotations and such 
+
 class Piece {
 public:
+    Piece();
     Piece(PieceType block);
     //Only for rotating N*N matrixes cuz im a dumb idiot
     void Move(bool isLeft, Board* board);
@@ -66,17 +73,21 @@ public:
     void Render(SDL_Renderer* renderer, Board* board);
     void Place(Board* board);
     void SoftDrop(Board* board);
+    void HardDrop(Board* board);
 
 private:
-    bool placed = false;
-    int centerBlockIndex = 1;
+    bool m_placed = false;
+    int m_centerBlockIndex = 1;
 
-    enum PieceType type;
-    Tetrimino piece;
-    Rotation rotationState = SPAWN;
+    enum PieceType m_type;
+    Tetrimino m_piece;
+    Rotation m_rotationState = SPAWN;
 private:
+//helper funcs
+    inline Grid ConvertPieceToGrid(const Tetrimino &piece);
     inline Rotation GetNextRotationState(Rotation r, bool CW);
     inline bool CheckCollisions(const Grid &pieceMatrix, const Grid &pieceSurroundings, const BoardInfo boardiInfo);
     inline void OffsetGridBlocks(Grid& pieceMatrix, Offset offset);
+    inline Grid _singleblock(Block centerB);
     bool TestSRS(bool isCW, Board* board, Grid& pieceMatrix);
 };

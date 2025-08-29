@@ -26,6 +26,7 @@ class Board {
         bool SetBlockColor(int row, int column, SDL_Color color);
         void DrawBoard(SDL_Renderer* renderer);
         Grid GetSurrounding(Block center);
+        Block GetCorrespondingBlock(Block center);
         BoardInfo GetBoardInfo();
     private:
         int boardWidth, boardHeight;
