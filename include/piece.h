@@ -86,7 +86,8 @@ private:
 //helper funcs
     inline Grid ConvertPieceToGrid(const Tetrimino &piece);
     inline Rotation GetNextRotationState(Rotation r, bool CW);
-    inline bool CheckCollisions(const Grid &pieceMatrix, const Grid &pieceSurroundings, const BoardInfo boardiInfo);
+    inline bool CheckCollisions(const Grid &pieceMatrix, const Grid &pieceSurroundings, const BoardInfo boardInfo);
+    inline bool CheckBlockCollision(const Block& pieceBlock, const Block& boardBlock, const BoardInfo boardInfo);
     inline void OffsetGridBlocks(Grid& pieceMatrix, Offset offset);
     inline Grid _singleblock(Block centerB);
     bool TestSRS(bool isCW, Board* board, Grid& pieceMatrix);

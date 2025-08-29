@@ -133,11 +133,9 @@ void Piece::SoftDrop(Board* board) {
     Tetrimino tempTetrimino = m_piece;
     for (Block &block: tempTetrimino) {
         block.y -=1;
-        Grid converted = _singleblock(block);
-        Grid convertedPiece = converted;
-        Grid surroundings = board->GetSurrounding(block);
+        Block boardBlock = board->GetCorrespondingBlock(block);
 
-        if ( CheckCollisions(converted, surroundings, board->GetBoardInfo()) ) {
+        if ( CheckBlockCollision(block, boardBlock, board->GetBoardInfo()) ) {
             return;
         }
     }
@@ -166,11 +164,9 @@ void Piece::HardDrop(Board* board) {
         bool broke = false;
         for (Block &block: tempTetrimino) {
             block.y -=1;
-            Grid converted = _singleblock(block);
-            Grid convertedPiece = converted;
-            Grid surroundings = board->GetSurrounding(block);
+            Block boardBlock = board->GetCorrespondingBlock(block);
 
-            if ( CheckCollisions(converted, surroundings, board->GetBoardInfo()) ) {
+            if ( CheckBlockCollision(block, boardBlock, board->GetBoardInfo()) ) {
                 broke = true;
                 break;
             }
@@ -202,11 +198,9 @@ void Piece::Move(bool isLeft, Board* board) {
     //Move
     for (Block &block: tempPiece) {
         block.x += isLeft ? -1 : 1;
-        Grid converted = _singleblock(block);
-        Grid convertedPiece = converted;
-        Grid surroundings = board->GetSurrounding(block);
+        Block boardBlock = board->GetCorrespondingBlock(block);
 
-        if ( CheckCollisions(converted, surroundings, board->GetBoardInfo()) ) {
+        if (CheckBlockCollision(block, boardBlock, board->GetBoardInfo())) {
             return;
         }
     }
@@ -377,16 +371,30 @@ inline Rotation Piece::GetNextRotationState(Rotation r, bool isCW) {
 inline bool Piece::CheckCollisions(const Grid &pieceMatrix, const Grid &surroundings, const BoardInfo boardInfo) {
     for (size_t row = 0; row < pieceMatrix.size(); row++) {
         for (size_t col = 0; col < pieceMatrix[row].size(); col++) {
-            bool outsideBoardWidth = pieceMatrix[row][col].x < 0 || 
-                                     pieceMatrix[row][col].x >= boardInfo.first || 
-                                     pieceMatrix[row][col].y < 0;
-            bool collision = pieceMatrix[row][col].color.a != SDL_ALPHA_TRANSPARENT && surroundings[row][col].color.a != SDL_ALPHA_TRANSPARENT;
-            if (pieceMatrix[row][col].color.a == SDL_ALPHA_TRANSPARENT) continue;
-            //Invalid position
-            if (collision || outsideBoardWidth) {
-                return true;
-            }
+            // bool outsideBoardWidth = pieceMatrix[row][col].x < 0 || 
+            //                          pieceMatrix[row][col].x >= boardInfo.first || 
+            //                          pieceMatrix[row][col].y < 0;
+            // bool collision = pieceMatrix[row][col].color.a != SDL_ALPHA_TRANSPARENT && surroundings[row][col].color.a != SDL_ALPHA_TRANSPARENT;
+            // if (pieceMatrix[row][col].color.a == SDL_ALPHA_TRANSPARENT) continue;
+            // //Invalid position
+            // if (collision || outsideBoardWidth) {
+            //     return true;
+            // }
+            if (CheckBlockCollision(pieceMatrix[row][col], surroundings[row][col], boardInfo)) return true;
         }
+    }
+    return false;
+}
+
+inline bool Piece::CheckBlockCollision(const Block& pieceBlock, const Block& gridBlock, const BoardInfo boardInfo) {
+    bool outsideBoardWidth = pieceBlock.x < 0 || 
+                                pieceBlock.x >= boardInfo.first || 
+                                pieceBlock.y < 0;
+    bool collision = pieceBlock.color.a != SDL_ALPHA_TRANSPARENT && gridBlock.color.a != SDL_ALPHA_TRANSPARENT;
+    if (pieceBlock.color.a == SDL_ALPHA_TRANSPARENT) return false;
+    //Invalid position
+    if (collision || outsideBoardWidth) {
+        return true;
     }
     return false;
 }
