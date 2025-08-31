@@ -28,9 +28,6 @@ using Grid = std::vector<std::vector<Block>>;
 using Tetrimino = std::vector<Block>;
 using Offset = std::pair<int, int>;
 
-//For rotating a 3x3 matrix
-inline void rotateMatrix(Grid& grid, bool isCCW);
-
 struct TetriminoData {
     SDL_Color color;
     std::vector<Offset> offsets;
@@ -67,28 +64,38 @@ class Piece {
 public:
     Piece();
     Piece(PieceType block);
-    //Only for rotating N*N matrixes cuz im a dumb idiot
     void Move(bool isLeft, Board* board);
-    void Rotate(bool isCounterClockwise, Board* board);
-    void Render(SDL_Renderer* renderer, Board* board);
+    void Rotate(bool isCW, Board* board);
+    void Reset();
+    void Reset(int centerX, int centerY);
+    virtual void Render(SDL_Renderer* renderer, Board* board);
     void Place(Board* board);
     void SoftDrop(Board* board);
     void HardDrop(Board* board);
+    void DropGhost(Board* board);
+    void Render(Board* board);
+    Tetrimino GetPiece();
+    Tetrimino GetGhost();
 
-private:
+protected:
     bool m_placed = false;
     int m_centerBlockIndex = 1;
+    float m_cx, m_cy; //SPECIAL FOR I PIECE
 
     enum PieceType m_type;
     Tetrimino m_piece;
+    Tetrimino m_ghostPiece;
     Rotation m_rotationState = SPAWN;
-private:
+protected:
 //helper funcs
-    inline Grid ConvertPieceToGrid(const Tetrimino &piece);
     inline Rotation GetNextRotationState(Rotation r, bool CW);
-    inline bool CheckCollisions(const Grid &pieceMatrix, const Grid &pieceSurroundings, const BoardInfo boardInfo);
     inline bool CheckBlockCollision(const Block& pieceBlock, const Block& boardBlock, const BoardInfo boardInfo);
-    inline void OffsetGridBlocks(Grid& pieceMatrix, Offset offset);
-    inline Grid _singleblock(Block centerB);
-    bool TestSRS(bool isCW, Board* board, Grid& pieceMatrix);
+    inline void RotatePiece(Tetrimino& piece, const Block& center, bool isCCW);
+    bool TestSRS(bool isCW, Board* board, Tetrimino& piece);
+    
+};
+
+class HoldPiece : public Piece {
+public: 
+    void Render(SDL_Renderer* renderer, Board* board) override;
 };
