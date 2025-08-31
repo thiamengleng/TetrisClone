@@ -23,7 +23,7 @@ namespace Bag {
     };
 
     static const std::vector<Piece> bag = {
-        Piece(PieceType::J),//I
+        Piece(PieceType::I),//I
         Piece(PieceType::J),
         Piece(PieceType::L),
         Piece(PieceType::O),
@@ -46,7 +46,7 @@ public:
     Randomiser(Bag::BagType bagType);
 
     Piece Get();
-    void DrawQueue(BoardInfo boardInfo);
+    std::deque<Piece> GetQueue();
 private:
     int bag_rindex = 0;
 

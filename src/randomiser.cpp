@@ -23,6 +23,9 @@ Piece Randomiser::Get() {
     queue.pop_front();
     return next;
 }
+std::deque<Piece> Randomiser::GetQueue() {
+    return queue;
+}
 
 inline void Randomiser::RefreshBag() {
     bag.clear();
@@ -53,7 +56,7 @@ inline void Randomiser::RefreshBag() {
             SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Invalid Bag type!");
         }
     }
-    bag_rindex = 0;
+    std::shuffle(bag.begin(), bag.end(), generator);
 }
 
 inline int Randomiser::GetNum() {
