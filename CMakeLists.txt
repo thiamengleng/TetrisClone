@@ -14,7 +14,14 @@ set(SDL3_DIR "${CMAKE_BINARY_DIR}/vendored/SDL")
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 
 # Create your game executable target as usual
-add_executable(${PROJECT_NAME} src/main.cpp src/piece.cpp src/board.cpp)
+add_executable(${PROJECT_NAME} 
+src/main.cpp 
+src/piece.cpp 
+src/board.cpp 
+src/input.cpp
+src/randomiser.cpp
+src/render.cpp
+)
 
 # Link to the actual SDL3 library.
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
