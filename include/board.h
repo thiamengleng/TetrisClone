@@ -17,18 +17,17 @@ struct Block {
 using Grid = std::vector<std::vector<Block>>;
 using BoardInfo = std::pair<int, int>;
 
-inline void DrawRect(SDL_Renderer* renderer, int x, int y, int w, int h, SDL_Color color);
-inline void DrawRectFilled(SDL_Renderer* renderer, int x, int y, int w, int h, SDL_Color color);
-
 class Board {
     public:
         Board(int w, int h);
         bool SetBlockColor(int row, int column, SDL_Color color);
-        void DrawBoard(SDL_Renderer* renderer);
-        Grid GetSurrounding(Block center);
+        void ClearLines(void);
         Block GetCorrespondingBlock(Block center);
         BoardInfo GetBoardInfo();
+        Grid GetGrid();
     private:
         int boardWidth, boardHeight;
         Grid grid;
+
+        bool ClearLine(int row);
 };
